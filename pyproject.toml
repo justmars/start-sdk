@@ -1,0 +1,64 @@
+[tool.poetry]
+name = "start_sdk"
+description = "Settings for Github, Cloudflare Images API"
+version = "0.0.1"
+authors = ["Marcelino G. Veloso III <mars@veloso.one>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://mv3.dev"
+repository = "https://github.com/justmars/start_sdk"
+documentation = "https://mv3.dev/start_sdk"
+classifiers = [
+  "Programming Language :: Python :: 3.11",
+  "Typing :: Typed",
+  "Development Status :: 4 - Beta",
+  "Framework :: Pytest",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-dotenv = "^0.21"
+pydantic = "^1.10.5"
+httpx = "^0.23.3"
+
+[tool.poetry.group.dev.dependencies] # latest as of Jan. 2023
+rich = "^13.3"
+black = "^23.1.0"
+pytest = "^7.2"
+pytest-datadir = "^1.4.1"
+pytest-cov = "^2.12.1"
+pre-commit = "^2.21"
+mkdocs = "^1.4.2"
+mkdocstrings = { extras = ["python"], version = "^0.20.0" }
+mkdocs-material = "^9.0.13"
+ipykernel = "^6.21.2"
+
+[tool.pytest]
+minversion = "7.2"
+addopts = "-ra -q --cov=start_code tests/"
+testpaths = ["tests"]
+
+[tool.ruff]
+ignore = ["F401"]
+
+[tool.black]
+target-version = ['py311']
+line-length = 79
+include = '.pyi?$'
+exclude = '''
+/(
+    .git
+    | .hg
+    | .mypy_cache
+    | .tox
+    | .venv
+    | _build
+    | buck-out
+    | build
+    | dist
+)/
+'''
+
+[build-system]
+requires = ["poetry-core>=1.3.2"]
+build-backend = "poetry.core.masonry.api"
