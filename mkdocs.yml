@@ -1,8 +1,8 @@
-site_name: start_sdk Docs
+site_name: start-sdk Docs
 site_description: start_code description
 site_url: https://mv3.dev
 site_author: Marcelino Veloso III
-repo_url: https://github.com/justmars
+repo_url: https://github.com/justmars/start-sdk
 theme:
   name: "material"
   palette:

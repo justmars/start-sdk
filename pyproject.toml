@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "start_sdk"
+name = "start-sdk"
 description = "Settings for Github, Cloudflare Images API"
 version = "0.0.1"
 authors = ["Marcelino G. Veloso III <mars@veloso.one>"]
 readme = "README.md"
 license = "MIT"
 homepage = "https://mv3.dev"
-repository = "https://github.com/justmars/start_sdk"
-documentation = "https://mv3.dev/start_sdk"
+repository = "https://github.com/justmars/start-sdk"
+documentation = "https://mv3.dev/start-sdk"
 classifiers = [
   "Programming Language :: Python :: 3.11",
   "Typing :: Typed",
