@@ -2,7 +2,6 @@ from collections.abc import Iterator
 from pathlib import Path
 from pydantic import BaseSettings, Field
 import boto3
-from boto3.resources.collection import ResourceCollection
 
 
 class CFR2(BaseSettings):
@@ -68,6 +67,8 @@ class CFR2_Bucket(CFR2):
 
     Helper function that can be assigned to each bucket.
 
+    Note [AWS API reference](https://docs.aws.amazon.com/AmazonS3/latest/API) vs. [R2](https://developers.cloudflare.com/r2/data-access/s3-api/api/)
+
     Examples:
         >>> import os
         >>> os.environ['CF_R2_ACCT_ID'] = "ACT"
@@ -77,7 +78,7 @@ class CFR2_Bucket(CFR2):
         >>> obj = CFR2_Bucket(name='test')
         >>> type(obj.bucket)
         <class 'boto3.resources.factory.s3.Bucket'>
-    """
+    """  # noqa: E501
 
     name: str
 
@@ -89,17 +90,16 @@ class CFR2_Bucket(CFR2):
     def client(self):
         return self.bucket.meta.client
 
-    def top_prefixes(self):
-        """See adapted recipe from boto3 re: top-level [prefixes](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#list-top-level-common-prefixes-in-amazon-s3-bucket)."""  # noqa: E501
-        _objs = []
-        paginator = self.client.get_paginator("list_objects")
-        result = paginator.paginate(Bucket=self.name, Delimiter="/")
-        for prefix in result.search("CommonPrefixes"):
-            _objs.append(prefix.get("Prefix"))  # type: ignore
-        return _objs
-
     def filter(self, prefix: str, key: str | None = None) -> Iterator[str]:
-        """See modified recipe from boto3 re: [filtering](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/collections.html#filtering). If a `key` is supplied with the `prefix`, a secondary filter is applied."""  # noqa: E501
+        """See modified recipe from boto3 re: [filtering](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/collections.html#filtering). Fetches objects in the bucket based on the `prefix` supplied. If a `key` is supplied with the `prefix`, a secondary filter is applied.
+
+        Args:
+            prefix (str): Main filter.
+            key (str | None, optional): Secondary filter. Defaults to None.
+
+        Yields:
+            Iterator[str]: The keys from the bucket matching prefix and key.
+        """  # noqa: E501
         objs = self.bucket.objects.filter(Prefix=prefix)
         for obj in objs:
             if key:
@@ -129,3 +129,16 @@ class CFR2_Bucket(CFR2):
         """
         with open(local_file, "wb") as write_file:
             return self.bucket.download_fileobj(loc, write_file)
+
+    def get_root_prefixes(self):
+        """See adapted recipe from boto3 re: top-level [prefixes](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#list-top-level-common-prefixes-in-amazon-s3-bucket).
+
+        Returns:
+            list[str]: Matching prefixes in the root of the bucket.
+        """  # noqa: E501
+        _objs = []
+        paginator = self.client.get_paginator("list_objects")
+        result = paginator.paginate(Bucket=self.name, Delimiter="/")
+        for prefix in result.search("CommonPrefixes"):
+            _objs.append(prefix.get("Prefix"))  # type: ignore
+        return _objs
