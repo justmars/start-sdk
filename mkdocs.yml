@@ -21,6 +21,7 @@ theme:
 nav:
   - Overview: index.md
   - API:
+    - CRUD Cloudflare R2: cf_r2.md
     - CRUD Cloudflare Images: cf_img.md
     - Read Github: github.md
 

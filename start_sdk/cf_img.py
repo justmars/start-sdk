@@ -10,15 +10,15 @@ class CFImage(BaseSettings):
 
     Field in .env | Cloudflare API Credential | Where credential found
     :--|:--:|:--
-    `CF_ACCT` | Account ID | `https://dash.cloudflare.com/<acct_id>/images/images`
-    `CF_TOKEN` | Account Hash | `https://dash.cloudflare.com/<acct_id>/images/images`
+    `CF_IMG_ACCT` | Account ID | `https://dash.cloudflare.com/<acct_id>/images/images`
+    `CF_IMG_TOKEN` | Account Hash | `https://dash.cloudflare.com/<acct_id>/images/images`
 
     Examples:
         >>> from pathlib import Path
         >>> import os
         >>> import io
-        >>> os.environ['CF_ACCT'] = "ABC"
-        >>> os.environ['CF_TOKEN'] = "XYZ"
+        >>> os.environ['CF_IMG_ACCT'] = "ABC"
+        >>> os.environ['CF_IMG_TOKEN'] = "XYZ"
         >>> from start_sdk import CFImage
         >>> cf = CFImage()
         >>> cf.headers
@@ -34,8 +34,8 @@ class CFImage(BaseSettings):
         >>> # Can now use img in `cf.post('sample_id', img)`
     """  # noqa: E501
 
-    acct: str = Field(default="ABC", repr=False, env="CF_ACCT")
-    token: str = Field(default="XYZ", repr=False, env="CF_TOKEN")
+    acct: str = Field(default="ABC", repr=False, env="CF_IMG_ACCT")
+    token: str = Field(default="XYZ", repr=False, env="CF_IMG_TOKEN")
     timeout: int = Field(default=60)
 
     class Config:

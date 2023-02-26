@@ -14,8 +14,16 @@ class Github(BaseSettings):
     `GH_TOKEN_VERSION` | Default: `2022-11-28` | See [docs](https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28)
     """  # noqa: E501
 
-    token: str = Field(..., repr=False, env="GH_TOKEN")
-    version: str = Field("2022-11-28", repr=False, env="GH_TOKEN_VERSION")
+    token: str = Field(
+        default=...,
+        repr=False,
+        env="GH_TOKEN",
+    )
+    version: str = Field(
+        default="2022-11-28",
+        repr=False,
+        env="GH_TOKEN_VERSION",
+    )
 
     class Config:
         env_file = ".env"

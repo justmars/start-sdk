@@ -1,5 +1,9 @@
 # Overview
 
-Settings for Github, Cloudflare Images API
+Settings for Github, Cloudflare
 
-Add .env variables for CRUD operations on Cloudflare Images and reading repositories on Github.
+Add .env variables for:
+
+1. CRUD operations on Cloudflare Images
+2. CRUD operations on Cloudflare R2
+3. Reading repositories on Github.
