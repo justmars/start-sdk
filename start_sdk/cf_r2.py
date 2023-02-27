@@ -19,14 +19,14 @@ class CFR2(BaseSettings):
     :--|:--:|:--
     `CF_ACCT_ID` | Account ID | `https://dash.cloudflare.com/<acct_id>/r2`
     `CF_R2_REGION` | Default Region: `apac` | See [options](https://developers.cloudflare.com/r2/learning/data-location/#available-hints)
-    `AWS_ACCESS_KEY_ID` | Key | When R2 Token created in `https://dash.cloudflare.com/<acct_id>/r2/overview/api-tokens`
-    `AWS_SECRET_ACCESS_KEY` | Secret | When R2 Token created in `https://dash.cloudflare.com/<acct_id>/r2/overview/api-tokens`
+    `R2_ACCESS_KEY_ID` | Key | When R2 Token created in `https://dash.cloudflare.com/<acct_id>/r2/overview/api-tokens`
+    `R2_SECRET_ACCESS_KEY` | Secret | When R2 Token created in `https://dash.cloudflare.com/<acct_id>/r2/overview/api-tokens`
 
     Examples:
         >>> import os
         >>> os.environ['CF_ACCT_ID'] = "ACT"
-        >>> os.environ['AWS_ACCESS_KEY_ID'] = "ABC"
-        >>> os.environ['AWS_SECRET_ACCESS_KEY'] = "XYZ"
+        >>> os.environ['R2_ACCESS_KEY_ID'] = "ABC"
+        >>> os.environ['R2_SECRET_ACCESS_KEY'] = "XYZ"
         >>> from start_sdk import CFR2
         >>> r2 = CFR2()
         >>> type(r2.resource)
@@ -36,7 +36,7 @@ class CFR2(BaseSettings):
 
     acct: str = Field(default="ACT", repr=False, env="CF_ACCT_ID")
     r2_region: str = Field(default="apac", repr=True, env="CF_R2_REGION")
-    aws_access_key_id: str = Field(
+    r2_access_key: str = Field(
         default="ABC",
         repr=False,
         title="R2 Key",
@@ -44,9 +44,9 @@ class CFR2(BaseSettings):
             "The Cloudflare R2 key/secret follows AWS S3 conventions, see"
             " compatability in docs."
         ),
-        env="AWS_ACCESS_KEY_ID",
+        env="R2_ACCESS_KEY_ID",
     )
-    aws_secret_access_key: str = Field(
+    r2_secret_key: str = Field(
         default="XYZ",
         repr=False,
         title="R2 Secret",
@@ -54,7 +54,7 @@ class CFR2(BaseSettings):
             "The Cloudflare R2 key/secret follows AWS S3 conventions, see"
             " compatability in docs."
         ),
-        env="AWS_SECRET_ACCESS_KEY",
+        env="R2_SECRET_ACCESS_KEY",
     )
 
     class Config:
@@ -73,8 +73,8 @@ class CFR2(BaseSettings):
         return boto3.resource(
             "s3",
             endpoint_url=self.endpoint_url,
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
+            aws_access_key_id=self.r2_access_key,
+            aws_secret_access_key=self.r2_secret_key,
             region_name=self.r2_region,
         )
 
@@ -93,8 +93,8 @@ class CFR2_Bucket(CFR2):
     Examples:
         >>> import os
         >>> os.environ['CF_R2_ACCT_ID'] = "ACT"
-        >>> os.environ['AWS_ACCESS_KEY_ID'] = "ABC"
-        >>> os.environ['AWS_SECRET_ACCESS_KEY'] = "XYZ"
+        >>> os.environ['R2_ACCESS_KEY_ID'] = "ABC"
+        >>> os.environ['R2_SECRET_ACCESS_KEY'] = "XYZ"
         >>> from start_sdk import CFR2_Bucket
         >>> obj = CFR2_Bucket(name='test')
         >>> type(obj.bucket)
