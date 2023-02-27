@@ -17,7 +17,7 @@ class CFImage(BaseSettings):
         >>> from pathlib import Path
         >>> import os
         >>> import io
-        >>> os.environ['CF_IMG_ACCT'] = "ABC"
+        >>> os.environ['CF_ACCT_ID'] = "ABC"
         >>> os.environ['CF_IMG_TOKEN'] = "XYZ"
         >>> from start_sdk import CFImage
         >>> cf = CFImage()
@@ -34,7 +34,7 @@ class CFImage(BaseSettings):
         >>> # Can now use img in `cf.post('sample_id', img)`
     """  # noqa: E501
 
-    acct: str = Field(default="ABC", repr=False, env="CF_IMG_ACCT")
+    acct: str = Field(default="ABC", repr=False, env="CF_ACCT_ID")
     token: str = Field(default="XYZ", repr=False, env="CF_IMG_TOKEN")
     timeout: int = Field(default=60)
 
