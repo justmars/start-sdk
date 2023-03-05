@@ -1,7 +1,12 @@
+import yaml
+from loguru import logger
 from collections.abc import Iterator
 from pathlib import Path
 from pydantic import BaseSettings, Field
+from typing import Any
+import re
 import boto3
+from typing import AnyStr
 
 
 class CFR2(BaseSettings):
@@ -163,3 +168,176 @@ class CFR2_Bucket(CFR2):
         for prefix in result.search("CommonPrefixes"):
             _objs.append(prefix.get("Prefix"))  # type: ignore
         return _objs
+
+
+class StorageUtils(CFR2_Bucket):
+    temp_folder: Path
+
+    @classmethod
+    def make_prefix(cls, items: list[AnyStr]) -> str | None:
+        """Given previously validated strings, combine to make a prefix.
+
+        Examples:
+        >>> StorageUtils.make_prefix(['GR', 2004, 4, 124124])
+        'GR/2004/4/124124'
+        >>> StorageUtils.make_prefix(['ra', 386, 1])
+        'ra/386/1'
+        >>> StorageUtils.make_prefix(['am', '121/31', 1]) is None
+        True
+
+        Args:
+            items (list[AnyStr]): Ingredients to make a prefix
+
+        Returns:
+            str: A prefix to use in R2 storage
+        """
+        elements = []
+        for item in items:
+            if text := str(item):
+                if "/" in text:
+                    return None
+                elements.append(str(item))
+        return "/".join(elements)
+
+    @classmethod
+    def prefix_to_slug(cls, prefix_candidate: str) -> str | None:
+        """Converts prefix to slug; presumes prior formatting done.
+
+        Examples:
+        >>> StorageUtils.prefix_to_slug('ra/386/1')
+        'ra-386-1'
+        >>> StorageUtils.prefix_to_slug('ra-386-1') is None
+        True
+
+        Args:
+            prefix_candidate (str): This ought to be a unique prefix from
+                `make_prefix()`
+
+        Returns:
+            str | None: Can serve as a slug.
+        """
+        if "/" not in prefix_candidate:
+            return None
+        return prefix_candidate.removesuffix("/").replace("/", "-").lower()
+
+    @classmethod
+    def prefix_from_slug(cls, id_candidate: str) -> str | None:
+        """With the id already created, deconstruct the same to get original prefix.
+
+        Examples:
+        >>> StorageUtils.prefix_from_slug('ra-386-1')
+        'ra/386/1'
+        >>> StorageUtils.prefix_from_slug('ra/386/1') is None
+        True
+
+        Args:
+            id_candidate (str): This ought to be a unique slug generated from
+                `to_id()`
+
+        Returns:
+            str | None: _description_
+        """
+        if "-" not in id_candidate:
+            return None
+        return id_candidate.replace("-", "/").lower()
+
+    @classmethod
+    def clean_extra_meta(cls, text: str):
+        """S3 metadata can only contain ASCII characters.
+
+        Examples:
+        >>> bad_text = "Hello,\\n\\n\\nthis breaks"
+        >>> StorageUtils.clean_extra_meta(bad_text)
+        'Hello, this breaks'
+        >>> text = "This is a valid string"
+        >>> StorageUtils.clean_extra_meta(text)
+        'This is a valid string'
+        """
+        text = re.sub(r"(\r|\n)+", r" ", text)
+        return re.sub(r"[^\x00-\x7f]", r"", text)
+
+    @classmethod
+    def set_extra_meta(cls, data: dict) -> dict:
+        """S3 metadata can be attached as extra args to R2.
+
+        Examples:
+        >>> test = {"statute_category": "RA", "statute_serial": None}
+        >>> StorageUtils.set_extra_meta(test)
+        {'Metadata': {'statute_category': 'RA'}}
+
+        Args:
+            data (dict): ordinary dict
+
+        Returns:
+            dict: Will be added to the `extra_args` field when uploading to R2
+        """
+        return {
+            "Metadata": {
+                k: cls.clean_extra_meta(str(v)) for k, v in data.items() if v
+            }
+        }
+
+    def make_temp_yaml_path_from_data(self, data: dict) -> Path:
+        """Create a temporary yaml file into folder path.
+
+        Args:
+            data (dict): What to store in the yaml file
+
+        Returns:
+            Path: Location of the yaml file created
+        """
+        temp_path = self.temp_folder / "temp.yaml"
+        temp_path.unlink(missing_ok=True)  # delete existing content, if any.
+        with open(temp_path, "w+"):
+            temp_path.write_text(yaml.safe_dump(data))
+        return temp_path
+
+    def restore_temp_yaml(self, yaml_suffix: str) -> dict[str, Any] | None:
+        """Based on the `yaml_suffix`, download the same into a temp file
+        and return its contents based on the extension.
+
+        A `yaml` extension should result in contents in `dict` format;
+
+        The temp file is deleted after every successful extraction of
+        the `src` as content."""
+        if not yaml_suffix.endswith(".yaml"):
+            logger.error(f"Not {yaml_suffix=}")
+            return None
+        path = self.temp_folder / "temp.yaml"
+
+        try:
+            self.download(loc=yaml_suffix, local_file=str(path))
+        except Exception as e:
+            logger.error(f"Could not download yaml; {e=}")
+            return None
+
+        content = yaml.safe_load(path.read_bytes())
+        path.unlink(missing_ok=True)
+        return content
+
+    def restore_temp_txt(self, readable_suffix: str) -> str | None:
+        """Based on the `src` prefix, download the same into a temp file
+        and return its contents based on the extension.
+
+        An `md` or `html` extension results in `str`.
+
+        The temp file is deleted after every successful extraction of
+        the `src` as content."""
+        if readable_suffix.endswith(".html"):
+            ext = ".html"
+        elif readable_suffix.endswith(".md"):
+            ext = ".md"
+        else:
+            logger.error(f"Not {readable_suffix=}")
+            return None
+
+        path = self.temp_folder / f"temp{ext}"
+        try:
+            self.download(loc=readable_suffix, local_file=str(path))
+        except Exception as e:
+            logger.error(f"Could not download yaml; {e=}")
+            return None
+
+        content = path.read_text()
+        path.unlink(missing_ok=True)
+        return content

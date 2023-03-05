@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "start-sdk"
 description = "Settings for Github, Cloudflare Images API"
-version = "0.0.5"
+version = "0.0.6"
 authors = ["Marcelino G. Veloso III <mars@veloso.one>"]
 readme = "README.md"
 license = "MIT"
@@ -20,7 +20,8 @@ python = "^3.11"
 python-dotenv = "^0.21"
 pydantic = "^1.10.5"
 httpx = "^0.23.3"
-boto3 = "^1.26.79"
+boto3 = "^1.26.84"
+loguru = "^0.6.0"
 
 [tool.poetry.group.dev.dependencies] # latest as of Jan. 2023
 rich = "^13.3"
@@ -31,7 +32,7 @@ pytest-cov = "^2.12.1"
 pre-commit = "^2.21"
 mkdocs = "^1.4.2"
 mkdocstrings = { extras = ["python"], version = "^0.20.0" }
-mkdocs-material = "^9.1"
+mkdocs-material = "^9.1.1"
 ipython = "^8.10.0"
 
 [tool.pytest]
