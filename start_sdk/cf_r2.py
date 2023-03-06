@@ -1,12 +1,12 @@
-import yaml
-from loguru import logger
+import re
 from collections.abc import Iterator
 from pathlib import Path
-from pydantic import BaseSettings, Field
 from typing import Any
-import re
+
 import boto3
-from typing import AnyStr
+import yaml
+from loguru import logger
+from pydantic import BaseSettings, Field
 
 
 class CFR2(BaseSettings):
@@ -172,74 +172,6 @@ class CFR2_Bucket(CFR2):
 
 class StorageUtils(CFR2_Bucket):
     temp_folder: Path
-
-    @classmethod
-    def make_prefix(cls, items: list[AnyStr]) -> str | None:
-        """Given previously validated strings, combine to make a prefix.
-
-        Examples:
-        >>> StorageUtils.make_prefix(['GR', 2004, 4, 124124])
-        'GR/2004/4/124124'
-        >>> StorageUtils.make_prefix(['ra', 386, 1])
-        'ra/386/1'
-        >>> StorageUtils.make_prefix(['am', '121/31', 1]) is None
-        True
-
-        Args:
-            items (list[AnyStr]): Ingredients to make a prefix
-
-        Returns:
-            str: A prefix to use in R2 storage
-        """
-        elements = []
-        for item in items:
-            if text := str(item):
-                if "/" in text:
-                    return None
-                elements.append(str(item))
-        return "/".join(elements)
-
-    @classmethod
-    def prefix_to_slug(cls, prefix_candidate: str) -> str | None:
-        """Converts prefix to slug; presumes prior formatting done.
-
-        Examples:
-        >>> StorageUtils.prefix_to_slug('ra/386/1')
-        'ra-386-1'
-        >>> StorageUtils.prefix_to_slug('ra-386-1') is None
-        True
-
-        Args:
-            prefix_candidate (str): This ought to be a unique prefix from
-                `make_prefix()`
-
-        Returns:
-            str | None: Can serve as a slug.
-        """
-        if "/" not in prefix_candidate:
-            return None
-        return prefix_candidate.removesuffix("/").replace("/", "-").lower()
-
-    @classmethod
-    def prefix_from_slug(cls, id_candidate: str) -> str | None:
-        """With the id already created, deconstruct the same to get original prefix.
-
-        Examples:
-        >>> StorageUtils.prefix_from_slug('ra-386-1')
-        'ra/386/1'
-        >>> StorageUtils.prefix_from_slug('ra/386/1') is None
-        True
-
-        Args:
-            id_candidate (str): This ought to be a unique slug generated from
-                `to_id()`
-
-        Returns:
-            str | None: _description_
-        """
-        if "-" not in id_candidate:
-            return None
-        return id_candidate.replace("-", "/").lower()
 
     @classmethod
     def clean_extra_meta(cls, text: str):
