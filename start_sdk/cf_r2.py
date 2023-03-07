@@ -177,25 +177,34 @@ class StorageUtils(CFR2_Bucket):
     def clean_extra_meta(cls, text: str):
         """S3 metadata can only contain ASCII characters.
 
+        The overall size cannot exceed a certain threshold, see `when calling the PutObject operation: Your metadata headers exceed the maximum allowed metadata size.')`
+
         Examples:
-        >>> bad_text = "Hello,\\n\\n\\nthis breaks"
-        >>> StorageUtils.clean_extra_meta(bad_text)
-        'Hello, this breaks'
-        >>> text = "This is a valid string"
-        >>> StorageUtils.clean_extra_meta(text)
-        'This is a valid string'
-        """
+            >>> bad_text = "Hello,\\n\\n\\nthis breaks"
+            >>> StorageUtils.clean_extra_meta(bad_text)
+            'Hello, this breaks'
+            >>> long_text = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec."
+            >>> StorageUtils.clean_extra_meta(long_text)
+            'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean m'
+            >>> valid_text = "This is a valid string"
+            >>> StorageUtils.clean_extra_meta(valid_text)
+            'This is a valid string'
+
+        """  # noqa: E501
         text = re.sub(r"(\r|\n)+", r" ", text)
-        return re.sub(r"[^\x00-\x7f]", r"", text)
+        text = re.sub(r"[^\x00-\x7f]", r"", text)
+        if len(text) >= 100:
+            text = text[:100]
+        return text
 
     @classmethod
     def set_extra_meta(cls, data: dict) -> dict:
         """S3 metadata can be attached as extra args to R2.
 
         Examples:
-        >>> test = {"statute_category": "RA", "statute_serial": None}
-        >>> StorageUtils.set_extra_meta(test)
-        {'Metadata': {'statute_category': 'RA'}}
+            >>> test = {"statute_category": "RA", "statute_serial": None}
+            >>> StorageUtils.set_extra_meta(test)
+            {'Metadata': {'statute_category': 'RA'}}
 
         Args:
             data (dict): ordinary dict

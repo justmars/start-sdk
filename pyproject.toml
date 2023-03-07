@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "start-sdk"
 description = "Settings for Github, Cloudflare Images API"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["Marcelino G. Veloso III <mars@veloso.one>"]
 readme = "README.md"
 license = "MIT"
@@ -37,7 +37,7 @@ ipython = "^8.10.0"
 
 [tool.pytest]
 minversion = "7.2"
-addopts = "-ra -q --cov=start_code tests/"
+addopts = "-ra -q --doctest-modules --cov=start_sdk tests/"
 testpaths = ["tests"]
 
 [tool.ruff]
