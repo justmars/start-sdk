@@ -1,5 +1,5 @@
-from pydantic import BaseSettings, Field
 import httpx
+from pydantic import BaseSettings, Field
 
 
 class Github(BaseSettings):

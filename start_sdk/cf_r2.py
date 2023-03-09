@@ -116,23 +116,61 @@ class CFR2_Bucket(CFR2):
     def client(self):
         return self.bucket.meta.client
 
-    def filter(self, prefix: str, key: str | None = None) -> Iterator[str]:
-        """See modified recipe from boto3 re: [filtering](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/collections.html#filtering). Fetches objects in the bucket based on the `prefix` supplied. If a `key` is supplied with the `prefix`, a secondary filter is applied.
+    def fetch(self, *args, **kwargs) -> dict:
+        """Each bucket contain content prefixes but can only be fetched incrementally,
+        e.g. by batches. Each batch limited to a max of 1000 prefixes. Without arguments
+        included in this call, will default to the first 1000 keys. See more details in
+        [boto3 list-objects-v2 API docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_objects_v2.html#list-objects-v2)
+        """  # noqa: E501
+        return self.client.list_objects_v2(Bucket=self.name, *args, **kwargs)
+
+    def all_items(self) -> list[dict] | None:
+        """Using pagination conventions from s3 and r2, get all prefixes found in
+        the bucket name. Note this aggregates all `fetch()` calls, specifically limiting
+        the response to the "Contents" key of each `fetch()` call. Such key will
+        contain a list of dict-based prefixes."""
+        contents = []
+        counter = 1
+        next_token = None
+        while True:
+            print(f"Accessing page {counter=}")
+            if counter == 1:
+                res = self.fetch()
+            elif next_token:
+                res = self.fetch(ContinuationToken=next_token)
+            else:
+                print("Missing next token.")
+                break
+
+            next_token = res.get("NextContinuationToken")
+            if res.get("Contents"):
+                contents.extend(res["Contents"])
+            counter += 1
+            if not res["IsTruncated"]:  # is False if all results returned.
+                print("All results returned.")
+                return contents
+
+    @classmethod
+    def filter_content(
+        cls, filter_suffix: str, objects_list: list[dict]
+    ) -> Iterator[dict]:
+        """Filter objects based on a `filter_suffix` from either:
+
+        1. List of objects from `self.all_items()`; or
+        2. _Contents_ key of `self.fetch()`. Note that each _Contents_ field of `fetch`
+        is a dict object, each object will contain a _Key_ field.
 
         Args:
-            prefix (str): Main filter.
-            key (str | None, optional): Secondary filter. Defaults to None.
+            filter_suffix (str): Prefix terminates with what suffix
+            objects_list (list[dict]): List of objects previously fetched
 
         Yields:
-            Iterator[str]: The keys from the bucket matching prefix and key.
-        """  # noqa: E501
-        objs = self.bucket.objects.filter(Prefix=prefix)
-        for obj in objs:
-            if key:
-                if key in obj.key:
-                    yield obj.key
-            else:
-                yield obj.key
+            Iterator[dict]: Filtered `objects_list` based on `filter_suffix`
+        """
+        for prefixed_obj in objects_list:
+            if key := prefixed_obj.get("Key"):
+                if key.endswith(filter_suffix):
+                    yield prefixed_obj
 
     def upload(self, file_like: str | Path, loc: str, args: dict = {}):
         """Upload local `file_like` contents to r2-bucket path `loc`.
